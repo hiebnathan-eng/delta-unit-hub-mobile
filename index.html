@@ -1,0 +1,624 @@
+<title>Unit Hub Mobile</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column for a phone in a scrub pocket. Sticky header (unit, date, shift),
+   scrolling bed cards, bottom tab bar. Delta navy + the Unit Hub status colors. */
+:root{
+  --bg:#F3F6F6; --panel:#FFFFFF; --panel2:#E9EFF0; --line:#D3DDDF; --fg:#13262B; --mut:#5A6F75;
+  --navy:#14424B; --accent:#0E7C93; --accent-tx:#FFFFFF; --red:#B3122B; --amber:#8A5A00; --amber-bg:#FFF1D6; --amber-bd:#E0A93B;
+  --st-avail-bg:#E3F0F3; --st-avail-tx:#0B4A58; --st-avail-bd:#0E7C93;
+  --st-occ-bg:#EAF1DC;   --st-occ-tx:#33520D;   --st-occ-bd:#6E9A2E;
+  --st-pend-bg:#FBEED3;  --st-pend-tx:#6B4108;  --st-pend-bd:#D9952B;
+  --st-iso-bg:#FAE3E6;   --st-iso-tx:#8E0B20;   --st-iso-bd:#C8102E;
+  --st-evs-bg:#F1E6F5;   --st-evs-tx:#5C2A6B;   --st-evs-bd:#814294;
+  --st-blk-bg:#E9E7E1;   --st-blk-tx:#4A5257;   --st-blk-bd:#9AA0A3;
+  --shadow:0 1px 2px rgba(20,66,75,.08),0 4px 14px rgba(20,66,75,.06);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1A1D; --panel:#132529; --panel2:#1B3237; --line:#2A454B; --fg:#E6F0F1; --mut:#93AAB0;
+  --navy:#8FC7D4; --accent:#3BA9C2; --accent-tx:#06181C; --red:#F08C9B; --amber:#F5C773; --amber-bg:#3D2E12; --amber-bd:#8A6420;
+  --st-avail-bg:#0F2E36; --st-avail-tx:#9FD8E6; --st-avail-bd:#2E90A6;
+  --st-occ-bg:#1E2A10;   --st-occ-tx:#C0DC8E;   --st-occ-bd:#7FA943;
+  --st-pend-bg:#33260C;  --st-pend-tx:#EFC983;  --st-pend-bd:#C08A2E;
+  --st-iso-bg:#38141A;   --st-iso-tx:#F3A7B2;   --st-iso-bd:#D8455E;
+  --st-evs-bg:#2A1B31;   --st-evs-tx:#DDB5EA;   --st-evs-bd:#9C5FB0;
+  --st-blk-bg:#242C30;   --st-blk-tx:#B7C2C6;   --st-blk-bd:#5A676C;
+  --shadow:none; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1A1D; --panel:#132529; --panel2:#1B3237; --line:#2A454B; --fg:#E6F0F1; --mut:#93AAB0;
+  --navy:#8FC7D4; --accent:#3BA9C2; --accent-tx:#06181C; --red:#F08C9B; --amber:#F5C773; --amber-bg:#3D2E12; --amber-bd:#8A6420;
+  --st-avail-bg:#0F2E36; --st-avail-tx:#9FD8E6; --st-avail-bd:#2E90A6;
+  --st-occ-bg:#1E2A10;   --st-occ-tx:#C0DC8E;   --st-occ-bd:#7FA943;
+  --st-pend-bg:#33260C;  --st-pend-tx:#EFC983;  --st-pend-bd:#C08A2E;
+  --st-iso-bg:#38141A;   --st-iso-tx:#F3A7B2;   --st-iso-bd:#D8455E;
+  --st-evs-bg:#2A1B31;   --st-evs-tx:#DDB5EA;   --st-evs-bd:#9C5FB0;
+  --st-blk-bg:#242C30;   --st-blk-tx:#B7C2C6;   --st-blk-bd:#5A676C;
+  --shadow:none; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.35;-webkit-text-size-adjust:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+/* header */
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);padding:10px 0 8px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.brand h1{margin:0;font-size:19px;font-weight:800;letter-spacing:-.01em;color:var(--navy)}
+.brand .src{font-size:12px;color:var(--mut);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seg{display:flex;background:var(--panel2);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;padding:8px 4px;font-weight:700;font-size:14px;color:var(--mut);min-height:38px}
+.seg button.on{background:var(--panel);color:var(--fg);box-shadow:var(--shadow)}
+.row{display:flex;gap:8px;align-items:center}
+.datebtn{border:1px solid var(--line);background:var(--panel);border-radius:10px;min-width:44px;min-height:40px;font-size:18px;font-weight:700}
+.datelab{flex:1;text-align:center;font-weight:700;font-size:15px;position:relative;min-height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--panel);border-radius:10px}
+.datelab input{position:absolute;inset:0;opacity:0;width:100%}
+.shiftseg{flex:0 0 132px}
+/* banners */
+.banner{margin:10px 0 0;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;border:1px solid}
+.banner.ex{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)}
+.banner.warn{background:var(--st-iso-bg);color:var(--st-iso-tx);border-color:var(--st-iso-bd)}
+.banner.info{background:var(--st-avail-bg);color:var(--st-avail-tx);border-color:var(--st-avail-bd)}
+/* summary */
+.sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+.tile{background:var(--panel);border-radius:12px;padding:9px 10px;box-shadow:var(--shadow);border:1px solid var(--line);min-width:0}
+.tile b{display:block;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.tile span{display:block;font-size:11.5px;color:var(--mut);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.bad b{color:var(--red)}
+/* filters */
+.chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 6px;scrollbar-width:none;margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)))}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;color:var(--mut);min-height:34px}
+.chip.on{background:var(--navy);border-color:var(--navy);color:var(--bg)}
+.chip .c{font-weight:800;margin-left:4px;opacity:.85}
+.sec{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin:16px 0 8px}
+/* bed cards */
+.beds{display:flex;flex-direction:column;gap:8px}
+.room{display:flex;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.bed{flex:1;min-width:0;border:1.8px solid;background:var(--panel);padding:9px 11px;text-align:left;display:flex;flex-direction:column;gap:3px;border-radius:12px}
+.room.pair .bed:first-child{border-radius:12px 0 0 12px;border-right-width:1px}
+.room.pair .bed:last-child{border-radius:0 12px 12px 0;border-left-width:1px}
+.bed .top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bed .no{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.bed .stl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;opacity:.9}
+.bed .pt{font-size:16px;font-weight:800}
+.bed .who{font-size:13px;font-weight:600;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bed .who.none{color:var(--red);font-weight:800}
+.tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 5px;background:rgba(0,0,0,.1)}
+:root[data-theme="dark"] .tag{background:rgba(255,255,255,.14)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tag{background:rgba(255,255,255,.14)}}
+.tag.dc{background:var(--accent);color:var(--accent-tx)}
+.s-avail{background:var(--st-avail-bg);color:var(--st-avail-tx);border-color:var(--st-avail-bd)}
+.s-occ{background:var(--st-occ-bg);color:var(--st-occ-tx);border-color:var(--st-occ-bd)}
+.s-pend{background:var(--st-pend-bg);color:var(--st-pend-tx);border-color:var(--st-pend-bd)}
+.s-iso{background:var(--st-iso-bg);color:var(--st-iso-tx);border-color:var(--st-iso-bd)}
+.s-evs{background:var(--st-evs-bg);color:var(--st-evs-tx);border-color:var(--st-evs-bd)}
+.s-blk{background:var(--st-blk-bg);color:var(--st-blk-tx);border-color:var(--st-blk-bd)}
+.empty{padding:22px 14px;text-align:center;color:var(--mut);font-weight:600;background:var(--panel);border-radius:12px;border:1px dashed var(--line)}
+/* assignments */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+.card .h{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.card .nm{font-weight:800;font-size:16px}
+.card .ld{margin-left:auto;font-weight:800;font-size:13px;border-radius:7px;padding:3px 8px;background:var(--panel2)}
+.card .ld.over{background:var(--st-iso-bg);color:var(--st-iso-tx)}
+.badge{font-size:10.5px;font-weight:800;border-radius:5px;padding:1px 6px;border:1px solid var(--line);color:var(--mut)}
+.badge.c{background:var(--navy);color:var(--bg);border-color:var(--navy)}
+.badge.fl{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)}
+.bchips{display:flex;gap:6px;flex-wrap:wrap}
+.bchip{border:1.6px solid;border-radius:8px;padding:6px 9px;font-weight:800;font-size:14px;min-height:36px}
+.bchip small{font-weight:700;opacity:.8;margin-left:3px}
+.stack{display:flex;flex-direction:column;gap:8px}
+.hint{font-size:12.5px;color:var(--mut)}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 14px;font-weight:700;min-height:44px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-tx)}
+.btn.danger{color:var(--red);border-color:var(--st-iso-bd)}
+.btn.wide{width:100%}
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:9;background:var(--panel);border-top:1px solid var(--line);display:flex;
+  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.tabs button{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;font-weight:700;color:var(--mut);padding:6px 0;min-height:50px}
+.tabs button svg{width:24px;height:24px}
+.tabs button.on{color:var(--accent)}
+.tabs .dot{position:absolute;margin-left:22px;margin-top:-2px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:800;line-height:16px;padding:0 4px}
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(5,20,24,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;
+  padding:8px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:2px auto 0}
+.sheet h2{margin:0;font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px}
+.lbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:6px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{border:1.6px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 11px;font-weight:700;font-size:14px;min-height:40px}
+.opt.on{border-color:var(--accent);background:var(--st-avail-bg);color:var(--st-avail-tx)}
+.opt.st.on{border-width:2px}
+.field{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 12px;min-height:44px;font-size:16px}
+.pick{display:flex;flex-direction:column;gap:6px}
+.pick button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:11px 12px;text-align:left;font-weight:700;min-height:48px}
+.pick button .r{margin-left:auto;font-size:13px;color:var(--mut)}
+.pick button .r.over{color:var(--red)}
+.btns{display:flex;gap:8px}.btns .btn{flex:1}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--navy);color:var(--bg);font-weight:700;font-size:14px;padding:10px 14px;border-radius:10px;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+.toast.bad{background:var(--red);color:#fff}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}.kv dt{color:var(--mut);font-weight:600}.kv dd{margin:0;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.tog{display:flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 12px;min-height:56px;text-align:left;width:100%}
+.tog .rm{font-weight:800;font-size:17px;min-width:44px}
+.tog .tx{flex:1;min-width:0;font-size:13px;color:var(--mut);font-weight:600}
+.tog .sw{flex:0 0 auto;width:50px;height:30px;border-radius:15px;background:var(--line);position:relative;transition:background .15s}
+.tog .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:left .15s}
+.tog[aria-checked="true"] .sw{background:var(--accent)}
+.tog[aria-checked="true"] .sw::after{left:23px}
+.tog.lock{opacity:.75}
+.log{font-size:13px;display:flex;flex-direction:column;gap:4px}.log div{padding:6px 0;border-bottom:1px solid var(--line)}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+@media (min-width:700px){.beds{display:grid;grid-template-columns:1fr 1fr}}
+</style>
+<header class="hdr">
+  <div class="brand"><h1>Unit Hub</h1><div class="src" id="srcLine"></div></div>
+  <div class="seg" id="unitSeg"><button data-u="medsurg">Med-Surg</button><button data-u="icu">ICU</button></div>
+  <div class="row">
+    <button class="datebtn" id="dPrev" aria-label="Previous shift">&#8249;</button>
+    <label class="datelab num"><span id="dLab"></span><input type="date" id="dIn" aria-label="Pick a date"></label>
+    <button class="datebtn" id="dNext" aria-label="Next shift">&#8250;</button>
+    <div class="seg shiftseg" id="shSeg"><button data-s="day">Day</button><button data-s="night">Night</button></div>
+  </div>
+</header>
+<main id="main"></main>
+<nav class="tabs" id="tabs">
+  <button data-t="board"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></svg>Bed board</button>
+  <button data-t="assign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 3-5 5.5-5s4.9 1.8 5.5 5"/><path d="M16 6.5h5M16 10.5h5M17.5 14.5h3.5"/></svg>Assignments</button>
+  <button data-t="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Settings</button>
+  <button data-t="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7.5 10.5 12 15l4.5-4.5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>Backup<span class="dot" id="chgDot" hidden></span></button>
+</nav>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+<div id="sheetHost"></div>
+<script>
+const EXAMPLE="{\"v\":17,\"sample\":true,\"sampleVer\":\"v16\",\"dark\":false,\"tab\":\"board\",\"both\":false,\"cmp\":{\"b\":{\"date\":\"2026-10-26\",\"shift\":\"night\"}},\"unit\":\"medsurg\",\"date\":\"2026-10-26\",\"shift\":\"day\",\"mapMode\":\"map\",\"settings\":{\"caps\":{\"medsurg\":{\"day\":5,\"night\":6},\"icu\":{\"day\":2,\"night\":2}},\"par\":{\"medsurg\":{\"rnD\":5,\"rnN\":4,\"chgD\":1,\"chgN\":1,\"tcD\":2,\"tcN\":2,\"wsD\":1,\"wsN\":1,\"hsN\":1,\"mgrD\":1},\"icu\":{\"rnD\":2,\"rnN\":2,\"chgD\":1,\"chgN\":1,\"tcD\":1,\"tcN\":1,\"wsD\":0,\"wsN\":0,\"hsN\":0,\"mgrD\":0}},\"shiftTimes\":{\"dayStart\":\"0700\",\"nightStart\":\"1900\"},\"hppd\":{\"medsurg\":7.5,\"icu\":16},\"hppdSet\":false,\"schedZoom\":42,\"schedOff\":0,\"alerts\":{\"spread\":2,\"evsMin\":120,\"backupDays\":7,\"admMismatch\":true,\"techCoverage\":true,\"surgeryRn\":true,\"safetyChecks\":true,\"unbuiltShift\":true,\"isoType\":true},\"safetyItems\":[{\"k\":\"crash\",\"n\":\"Crash cart checked\"},{\"k\":\"gluc\",\"n\":\"Glucometer QC\"},{\"k\":\"narc\",\"n\":\"Narc count\"},{\"k\":\"fridge\",\"n\":\"Med fridge temp\"}],\"ui\":{\"theme\":\"light\",\"fontScale\":\"normal\",\"tvCycle\":false,\"alertsCollapsed\":false},\"reportName\":\"\",\"escalation\":\"1. Charge nurse\\n2. House supervisor\\n3. Nursing admin on call\\n4. CNO\",\"lastBackup\":1792935189892,\"splitRooms\":[\"256\",\"258\",\"261\",\"262\",\"267\",\"268\",\"269\",\"270\"]},\"staff\":[{\"id\":1,\"name\":\"Alvarez, Teresa\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0101\",\"notes\":\"\",\"prefs\":\"Charge preferred. No Tuesdays.\",\"fte\":null,\"chargeOk\":true},{\"id\":2,\"name\":\"Brooks, Jordan\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0102\",\"notes\":\"\",\"prefs\":\"Wants every other Friday off.\",\"fte\":null,\"chargeOk\":true},{\"id\":3,\"name\":\"Kim, Sunhee\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0103\",\"notes\":\"\",\"prefs\":\"Max 3 shifts in a row.\",\"fte\":null,\"chargeOk\":true},{\"id\":4,\"name\":\"Reyes, Marco\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0104\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":5,\"name\":\"Ortega, Rosa\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0105\",\"notes\":\"\",\"prefs\":\"Prefers weekends, school weekdays.\",\"fte\":null,\"chargeOk\":true},{\"id\":6,\"name\":\"Nguyen, Thanh\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0106\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":7,\"name\":\"Okafor, Blessing\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0107\",\"notes\":\"\",\"prefs\":\"No back-to-back weekends.\",\"fte\":null,\"chargeOk\":true},{\"id\":8,\"name\":\"Delgado, Rafael\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0108\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":9,\"name\":\"Hartman, Paula\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0109\",\"notes\":\"\",\"prefs\":\"Happy to pick up extra.\",\"fte\":null,\"chargeOk\":true},{\"id\":10,\"name\":\"Sanchez, Inez\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0110\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":11,\"name\":\"Byrne, Maeve\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0111\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":12,\"name\":\"Whitfield, Andre\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0112\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":13,\"name\":\"Doyle, Claire\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0113\",\"notes\":\"\",\"prefs\":\"Child care - needs 4 hrs notice.\",\"fte\":null,\"chargeOk\":true},{\"id\":14,\"name\":\"Marsh, Evan\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0114\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":15,\"name\":\"Vann, Kara\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0115\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":16,\"name\":\"Osei, Daniel\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0116\",\"notes\":\"\",\"prefs\":\"Prefers Sun-Tue block.\",\"fte\":null,\"chargeOk\":true},{\"id\":17,\"name\":\"Ramsey, Jonah\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0117\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":18,\"name\":\"Lindqvist, Anja\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0118\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":19,\"name\":\"Fuentes, Carmen\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0119\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":20,\"name\":\"Boone, Tyler\",\"role\":\"RN\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0120\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":21,\"name\":\"Pruitt, Lena\",\"role\":\"LPN\",\"unit\":\"medsurg\",\"shift\":\"Rotating\",\"phone\":\"(970) 555-0121\",\"notes\":\"\",\"prefs\":\"Days preferred.\",\"fte\":null,\"chargeOk\":false},{\"id\":22,\"name\":\"Salas, Nico\",\"role\":\"LPN\",\"unit\":\"medsurg\",\"shift\":\"Rotating\",\"phone\":\"(970) 555-0122\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":23,\"name\":\"Garcia, Mateo\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0123\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":24,\"name\":\"Jones, K\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0124\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":25,\"name\":\"Weber, Stefan\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0125\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":26,\"name\":\"Ali, Rania\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0126\",\"notes\":\"\",\"prefs\":\"Student - no Wednesdays.\",\"fte\":null,\"chargeOk\":false},{\"id\":27,\"name\":\"Novak, Elena\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0127\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":28,\"name\":\"Pham, Linh\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0128\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":29,\"name\":\"Snow, B\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0129\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":30,\"name\":\"Duarte, V\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0130\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":31,\"name\":\"Kowal, Jacek\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0131\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":32,\"name\":\"Hale, Devon\",\"role\":\"CNA/Tech\",\"unit\":\"medsurg\",\"shift\":\"PRN\",\"phone\":\"(970) 555-0132\",\"notes\":\"PRN\",\"prefs\":\"PRN - usually says yes to days.\",\"fte\":null,\"chargeOk\":false},{\"id\":33,\"name\":\"Ibarra, Felipe\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Day\",\"phone\":\"(970) 555-0133\",\"notes\":\"\",\"prefs\":\"Charge trained.\",\"fte\":null,\"chargeOk\":true},{\"id\":34,\"name\":\"Cole, P\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Day\",\"phone\":\"(970) 555-0134\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":35,\"name\":\"Sattler, Greta\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Day\",\"phone\":\"(970) 555-0135\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":36,\"name\":\"Mendez, A\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Day\",\"phone\":\"(970) 555-0136\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":37,\"name\":\"Grant, Naomi\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Day\",\"phone\":\"(970) 555-0137\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":38,\"name\":\"Nash, Corey\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Night\",\"phone\":\"(970) 555-0138\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":39,\"name\":\"Ford, H\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Night\",\"phone\":\"(970) 555-0139\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":40,\"name\":\"Serrano, L\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Night\",\"phone\":\"(970) 555-0140\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":41,\"name\":\"Whitlock, D\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Night\",\"phone\":\"(970) 555-0141\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":42,\"name\":\"Abbott, J\",\"role\":\"RN\",\"unit\":\"icu\",\"shift\":\"Night\",\"phone\":\"(970) 555-0142\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":43,\"name\":\"Quinn, Shauna\",\"role\":\"CNA/Tech\",\"unit\":\"icu\",\"shift\":\"Day\",\"phone\":\"(970) 555-0143\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":44,\"name\":\"Rios, M\",\"role\":\"CNA/Tech\",\"unit\":\"icu\",\"shift\":\"Night\",\"phone\":\"(970) 555-0144\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":45,\"name\":\"Tanaka, H\",\"role\":\"CNA/Tech\",\"unit\":\"icu\",\"shift\":\"Rotating\",\"phone\":\"(970) 555-0145\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":46,\"name\":\"Everly, Simone\",\"role\":\"RN\",\"unit\":\"float\",\"shift\":\"Rotating\",\"phone\":\"(970) 555-0146\",\"notes\":\"\",\"prefs\":\"Floats Med-Surg and ICU.\",\"fte\":null,\"chargeOk\":true},{\"id\":47,\"name\":\"Marek, Piotr\",\"role\":\"RN\",\"unit\":\"float\",\"shift\":\"Rotating\",\"phone\":\"(970) 555-0147\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":true},{\"id\":48,\"name\":\"Iverson, Cody\",\"role\":\"CNA/Tech\",\"unit\":\"float\",\"shift\":\"Rotating\",\"phone\":\"(970) 555-0148\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":49,\"name\":\"Lund, Vera\",\"role\":\"Support\",\"unit\":\"medsurg\",\"shift\":\"Day\",\"phone\":\"(970) 555-0149\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false},{\"id\":50,\"name\":\"Ames, Wanda\",\"role\":\"Support\",\"unit\":\"medsurg\",\"shift\":\"Night\",\"phone\":\"(970) 555-0150\",\"notes\":\"\",\"prefs\":\"\",\"fte\":null,\"chargeOk\":false}],\"leadership\":[{\"role\":\"Hospitalist\",\"grp\":\"provider\",\"name\":\"Dr. Patel\",\"phone\":\"(970) 555-0503\"},{\"role\":\"Director\",\"grp\":\"shift\",\"name\":\"\",\"phone\":\"\"},{\"role\":\"Manager\",\"grp\":\"shift\",\"name\":\"\",\"phone\":\"\"},{\"role\":\"House supervisor\",\"grp\":\"shift\",\"name\":\"Nguyen, Bao, RN\",\"phone\":\"(970) 555-0501\"},{\"role\":\"Med-Surg charge\",\"grp\":\"shift\",\"auto\":\"medsurg\",\"name\":\"\",\"phone\":\"\",\"note\":\"Fills in from the Med-Surg assignment\"},{\"role\":\"ICU charge\",\"grp\":\"shift\",\"auto\":\"icu\",\"name\":\"\",\"phone\":\"\",\"note\":\"Fills in from the ICU assignment\"},{\"role\":\"On call pharmacy\",\"grp\":\"oncall\",\"name\":\"\",\"phone\":\"\"},{\"role\":\"On call OR staff\",\"grp\":\"oncall\",\"name\":\"\",\"phone\":\"\"},{\"role\":\"On call surgeon\",\"grp\":\"oncall\",\"name\":\"\",\"phone\":\"\"},{\"role\":\"Nursing admin on call\",\"grp\":\"oncall\",\"name\":\"Thompson, Dana\",\"phone\":\"(970) 555-0502\"},{\"role\":\"Ward secretary\",\"grp\":\"support\",\"name\":\"Lund, Vera\",\"phone\":\"(970) 555-0401\"},{\"role\":\"Monitor tech\",\"grp\":\"support\",\"name\":\"Quinn, Shauna\",\"phone\":\"(970) 555-0305\"}],\"units\":{\"medsurg\":{\"rooms\":{\"251\":{\"st\":\"occ\",\"pt\":\"J.M\",\"ac\":2,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-26\",\"md\":\"Dr. Patel\",\"flags\":[\"Fall risk\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"252\":{\"st\":\"occ\",\"pt\":\"R.W\",\"ac\":1,\"adm\":\"Floor\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Chen\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"253\":{\"st\":\"pend\",\"pt\":\"K.A\",\"ac\":2,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"Dr. Patel\",\"flags\":[],\"nt\":\"ETA 1400 from ER\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"254\":{\"st\":\"occ\",\"pt\":\"L.M\",\"ac\":3,\"adm\":\"Stepdown\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-28\",\"md\":\"Dr. Shah\",\"flags\":[\"Tele\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"255\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"257\":{\"st\":\"iso\",\"pt\":\"F.G\",\"ac\":3,\"adm\":\"\",\"lpn\":false,\"iso\":\"Contact\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-28\",\"md\":\"Dr. Patel\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"259\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"260\":{\"st\":\"occ\",\"pt\":\"C.L\",\"ac\":2,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-28\",\"md\":\"Dr. Chen\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"263\":{\"st\":\"occ\",\"pt\":\"M.R\",\"ac\":4,\"adm\":\"ICU\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-26\",\"edc\":\"2026-10-28\",\"md\":\"Dr. Shah\",\"flags\":[\"Tele\",\"Sitter 1:1\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"264\":{\"st\":\"occ\",\"pt\":\"E.D\",\"ac\":2,\"adm\":\"Floor\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Chen\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"271\":{\"st\":\"pend\",\"pt\":\"D.H\",\"ac\":3,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"Dr. Shah\",\"flags\":[],\"nt\":\"Transfer from ICU\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"272\":{\"st\":\"occ\",\"pt\":\"V.A\",\"ac\":1,\"adm\":\"Floor\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Patel\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"273\":{\"st\":\"evs\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":1793018469867,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"274\":{\"st\":\"occ\",\"pt\":\"S.Y\",\"ac\":2,\"adm\":\"Floor\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-26\",\"md\":\"Dr. Chen\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"275\":{\"st\":\"iso\",\"pt\":\"R.K\",\"ac\":3,\"adm\":\"\",\"lpn\":false,\"iso\":\"Droplet\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-28\",\"md\":\"Dr. Shah\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"276\":{\"st\":\"evs\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":1793020869867,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"277\":{\"st\":\"occ\",\"pt\":\"L.S\",\"ac\":2,\"adm\":\"Floor\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Patel\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"256A\":{\"st\":\"occ\",\"pt\":\"B.T\",\"ac\":2,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Chen\",\"flags\":[\"NPO\",\"Surgery today\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"256B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"258A\":{\"st\":\"occ\",\"pt\":\"N.W\",\"ac\":1,\"adm\":\"Floor\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-26\",\"md\":\"Dr. Shah\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"258B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"261A\":{\"st\":\"occ\",\"pt\":\"A.B\",\"ac\":1,\"adm\":\"Floor\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Patel\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"261B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"262A\":{\"st\":\"pend\",\"pt\":\"T.N\",\"ac\":2,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"Dr. Shah\",\"flags\":[],\"nt\":\"Post-op, OR out ~1600\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"262B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"267A\":{\"st\":\"occ\",\"pt\":\"H.C\",\"ac\":1,\"adm\":\"TPAC\",\"lpn\":true,\"iso\":\"\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-26\",\"md\":\"Dr. Shah\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"267B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"268A\":{\"st\":\"occ\",\"pt\":\"P.L\",\"ac\":2,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Patel\",\"flags\":[\"Fall risk\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"268B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"269A\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"269B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"270A\":{\"st\":\"occ\",\"pt\":\"G.W\",\"ac\":3,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-28\",\"md\":\"Dr. Chen\",\"flags\":[\"Tele\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"270B\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null}},\"shifts\":{\"2026-10-26|day\":{\"charge\":1,\"onRns\":[1,3,6,8,10,21],\"onTechs\":[23,25,32],\"assign\":{\"251\":{\"rn\":6,\"tech\":23,\"src\":\"auto\"},\"252\":{\"rn\":21,\"tech\":23,\"src\":\"auto\"},\"253\":{\"rn\":8,\"tech\":25,\"src\":\"auto\"},\"254\":{\"rn\":10,\"tech\":23,\"src\":\"auto\"},\"257\":{\"rn\":3,\"tech\":23,\"src\":\"auto\"},\"260\":{\"rn\":6,\"tech\":25,\"src\":\"auto\"},\"263\":{\"rn\":1,\"tech\":23,\"src\":\"auto\"},\"264\":{\"rn\":3,\"tech\":25,\"src\":\"auto\"},\"271\":{\"rn\":1,\"tech\":25,\"src\":\"auto\"},\"272\":{\"rn\":3,\"tech\":23,\"src\":\"auto\"},\"274\":{\"rn\":6,\"tech\":25,\"src\":\"auto\"},\"275\":{\"rn\":8,\"tech\":23,\"src\":\"auto\"},\"277\":{\"rn\":10,\"tech\":25,\"src\":\"auto\"},\"256A\":{\"rn\":1,\"tech\":25,\"src\":\"auto\"},\"258A\":{\"rn\":21,\"tech\":25,\"src\":\"auto\"},\"261A\":{\"rn\":8,\"tech\":23,\"src\":\"auto\"},\"262A\":{\"rn\":10,\"tech\":25,\"src\":\"auto\"},\"267A\":{\"rn\":6,\"tech\":23,\"src\":\"auto\"},\"268A\":{\"rn\":8,\"tech\":25,\"src\":\"auto\"},\"270A\":{\"rn\":10,\"tech\":23,\"src\":\"auto\"}},\"deck\":[{\"r\":\"255\",\"rn\":6,\"tech\":23,\"eta\":\"1430\",\"src\":\"ER\"},{\"r\":\"259\",\"rn\":10,\"tech\":25,\"eta\":\"\",\"src\":\"Direct admit\"},{\"r\":\"269A\",\"rn\":0,\"tech\":0,\"eta\":\"\",\"src\":\"\"}],\"surg\":[{\"room\":\"259\",\"rn\":6,\"time\":\"1330\",\"surgeon\":\"Dr. Voss\",\"note\":\"From PACU\"}],\"census\":\"19\",\"notes\":\"Watch 275 for droplet supplies. EVS short one person until 1500.\",\"safety\":{\"crash\":true,\"gluc\":true,\"narc\":true,\"fridge\":true},\"posted\":null,\"firstEdit\":null,\"calls\":{\"13\":{\"st\":\"called\",\"ans\":\"no\",\"t\":1793016189891,\"nt\":\"working tonight already\"},\"22\":{\"st\":\"msg\",\"ans\":null,\"t\":1793018289891,\"nt\":\"texted, no reply yet\"},\"32\":{\"st\":\"called\",\"ans\":\"yes\",\"t\":1793019789891,\"nt\":\"can be here by 1100\"}},\"events\":\"Rapid response 262 at 0930, patient stayed on the floor. Pharmacy delay on the 1000 antibiotics, resolved.\",\"finalized\":null,\"decisions\":[\"Shift built from schedule (6 nurses, 2 techs)\",\"Assignments finalized at 07:20\"],\"calledIn\":[32],\"admits\":[]},\"2026-10-26|night\":{\"charge\":12,\"onRns\":[12,14,17,19],\"onTechs\":[28,30],\"assign\":{\"251\":{\"rn\":12,\"tech\":28,\"src\":\"auto\"},\"252\":{\"rn\":14,\"tech\":30,\"src\":\"auto\"},\"253\":{\"rn\":17,\"tech\":28,\"src\":\"auto\"},\"254\":{\"rn\":19,\"tech\":30,\"src\":\"auto\"},\"257\":{\"rn\":14,\"tech\":30,\"src\":\"auto\"},\"260\":{\"rn\":19,\"tech\":30,\"src\":\"auto\"},\"263\":{\"rn\":17,\"tech\":28,\"src\":\"auto\"},\"264\":{\"rn\":19,\"tech\":30,\"src\":\"auto\"},\"271\":{\"rn\":19,\"tech\":30,\"src\":\"auto\"},\"272\":{\"rn\":12,\"tech\":28,\"src\":\"auto\"},\"274\":{\"rn\":14,\"tech\":30,\"src\":\"auto\"},\"275\":{\"rn\":17,\"tech\":28,\"src\":\"auto\"},\"277\":{\"rn\":19,\"tech\":30,\"src\":\"auto\"},\"256A\":{\"rn\":12,\"tech\":28,\"src\":\"auto\"},\"258A\":{\"rn\":17,\"tech\":28,\"src\":\"auto\"},\"261A\":{\"rn\":12,\"tech\":28,\"src\":\"auto\"},\"262A\":{\"rn\":14,\"tech\":30,\"src\":\"auto\"},\"267A\":{\"rn\":12,\"tech\":28,\"src\":\"auto\"},\"268A\":{\"rn\":14,\"tech\":30,\"src\":\"auto\"},\"270A\":{\"rn\":17,\"tech\":28,\"src\":\"auto\"}},\"deck\":[],\"surg\":[],\"census\":\"\",\"notes\":\"\",\"safety\":{\"crash\":true,\"gluc\":true,\"narc\":true,\"fridge\":true},\"posted\":null,\"firstEdit\":null,\"calls\":{},\"events\":\"\",\"finalized\":1793109600000,\"decisions\":[\"Shift built from schedule (4 nurses, 2 techs)\",\"Assignments finalized at 19:20\"],\"calledIn\":[],\"admits\":[]}}},\"icu\":{\"rooms\":{\"281\":{\"st\":\"occ\",\"pt\":\"A.T\",\"ac\":4,\"adm\":\"ICU\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-25\",\"edc\":\"\",\"md\":\"Dr. Rivera\",\"flags\":[\"Tele\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"282\":{\"st\":\"occ\",\"pt\":\"C.J\",\"ac\":3,\"adm\":\"Stepdown\",\"lpn\":false,\"iso\":\"\",\"ad\":\"2026-10-24\",\"edc\":\"2026-10-27\",\"md\":\"Dr. Rivera\",\"flags\":[\"Tele\"],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"283\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"284\":{\"st\":\"iso\",\"pt\":\"B.N\",\"ac\":4,\"adm\":\"ICU\",\"lpn\":false,\"iso\":\"Droplet\",\"ad\":\"2026-10-26\",\"edc\":\"\",\"md\":\"Dr. Rivera\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"285\":{\"st\":\"evs\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":1793020089867,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null},\"286\":{\"st\":\"avail\",\"pt\":\"\",\"ac\":0,\"adm\":\"\",\"lpn\":false,\"iso\":\"\",\"ad\":\"\",\"edc\":\"\",\"md\":\"\",\"flags\":[],\"nt\":\"\",\"evs\":null,\"act\":\"\",\"diet\":\"\",\"alg\":\"\",\"bgl\":\"\",\"dcp\":\"\",\"dc\":null,\"arrived\":null}},\"shifts\":{\"2026-10-26|day\":{\"charge\":33,\"onRns\":[33,35],\"onTechs\":[43],\"assign\":{\"281\":{\"rn\":33,\"tech\":43,\"src\":\"auto\"},\"282\":{\"rn\":35,\"tech\":43,\"src\":\"auto\"},\"284\":{\"rn\":33,\"tech\":43,\"src\":\"auto\"}},\"deck\":[{\"r\":\"283\",\"rn\":35,\"tech\":43,\"eta\":\"\",\"src\":\"ER\"},{\"r\":\"286\",\"rn\":0,\"tech\":0,\"eta\":\"\",\"src\":\"\"}],\"surg\":[],\"census\":\"3\",\"notes\":\"\",\"safety\":{\"crash\":true,\"gluc\":true,\"narc\":true,\"fridge\":true},\"posted\":null,\"firstEdit\":null,\"calls\":{},\"events\":\"\",\"finalized\":null,\"decisions\":[\"Shift built from schedule (2 nurses, 1 techs)\",\"Assignments finalized at 07:20\"],\"calledIn\":[],\"admits\":[]},\"2026-10-26|night\":{\"charge\":38,\"onRns\":[38,40],\"onTechs\":[43],\"assign\":{\"281\":{\"rn\":38,\"tech\":43,\"src\":\"auto\"},\"282\":{\"rn\":40,\"tech\":43,\"src\":\"auto\"},\"284\":{\"rn\":38,\"tech\":43,\"src\":\"auto\"}},\"deck\":[],\"surg\":[],\"census\":\"\",\"notes\":\"\",\"safety\":{\"crash\":true,\"gluc\":true,\"narc\":true,\"fridge\":true},\"posted\":null,\"firstEdit\":null,\"calls\":{},\"events\":\"\",\"finalized\":1793109600000,\"decisions\":[\"Shift built from schedule (2 nurses, 1 techs)\",\"Assignments finalized at 19:20\"],\"calledIn\":[],\"admits\":[]}}}},\"sched\":{\"start\":null,\"cells\":{},\"archive\":[],\"reqLog\":[],\"reqs\":{},\"draft\":null,\"drafts\":[]},\"hist\":[],\"snaps\":[],\"prod\":[],\"payroll\":[],\"guests\":[]}";
+'use strict';
+/* Unit Hub Mobile. Reads a Delta Unit Hub backup (History > Download backup on the Mac),
+   shows the bed board and assignments for one shift, takes quick edits, and saves a
+   backup the Mac can load. Nothing is uploaded: the file is read on this phone. */
+const LS='uhm_state_v1';
+const STATUSES=[{k:'occ',l:'Occupied'},{k:'iso',l:'Isolation'},{k:'pend',l:'Pending admit'},{k:'avail',l:'Available'},{k:'evs',l:'Dirty - EVS'},{k:'blk',l:'Blocked'}];
+const STL=Object.fromEntries(STATUSES.map(s=>[s.k,s.l]));
+const FLAGS=['Fall risk','Tele','Sitter 1:1','NPO','Surgery today','Restraints'], ICU_FLAGS=['Vent','BiPAP/CPAP','Pressors'];
+const ABBR={'Fall risk':'FALL','Tele':'TELE','Sitter 1:1':'1:1','NPO':'NPO','Surgery today':'SURG','Restraints':'RSTR','Vent':'VENT','BiPAP/CPAP':'BIPAP','Pressors':'PRESS'};
+const ISO=['Contact','Droplet','Airborne','Contact + Droplet','Neutropenic'];
+const UNAME={medsurg:'Med-Surg',icu:'ICU'};
+let D=null, META=null, CHG=[], V={unit:'medsurg',date:'',shift:'day',tab:'board',filter:'all'};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fromIso=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=fromIso(s);d.setDate(d.getDate()+n);return iso(d)};
+const fmtD=s=>fromIso(s).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});
+const nowHM=()=>{const d=new Date();return pad(d.getHours())+pad(d.getMinutes())};
+const occ=st=>st==='occ'||st==='iso';
+function blankRoom(){return{st:'avail',pt:'',ac:0,adm:'',lpn:false,iso:'',ad:'',edc:'',md:'',flags:[],nt:'',evs:null,act:'',diet:'',alg:'',bgl:'',dcp:'',dc:null,arrived:null}}
+function defaultShift(){return{charge:0,onRns:[],onTechs:[],assign:{},deck:[],surg:[],census:'',notes:'',safety:{crash:null,gluc:null,narc:null,fridge:null},posted:null,firstEdit:null,calls:{},events:'',finalized:null,decisions:[],calledIn:[],admits:[]}}
+
+/* ── names, as the desktop shows them: First L. ── */
+function nameParts(n){n=String(n||'').trim();if(/^(dr\.?|doctor)\b/i.test(n))return null;
+  if(n.indexOf(',')<0){const p=n.split(/\s+/).filter(Boolean);if(p.length>=2)n=p.slice(1).join(' ')+', '+p[0]}
+  const [ln,fn]=n.split(',').map(x=>(x||'').trim());return {ln:ln||'',fn:(fn||'').split(/\s+/)[0]||''}}
+function dispName(n){if(!n)return '';const p=nameParts(n);if(!p)return n;if(!p.fn)return p.ln;if(!p.ln)return p.fn;return p.fn+' '+p.ln[0]+'.'}
+function staffById(id){if(!D||!id)return null;if(id<0)return (D.guests||[]).find(s=>s.id===id)||null;return (D.staff||[]).find(s=>s.id===id)||null}
+const isNurse=s=>s&&(s.role==='RN'||s.role==='LPN');
+const who=id=>{const s=staffById(id);return s?dispName(s.name):''};
+
+/* ── beds ── */
+function bedSort(a,b){const na=parseInt(a,10),nb=parseInt(b,10);return na-nb||a.localeCompare(b)}
+function beds(u){return Object.keys(((D.units||{})[u]||{}).rooms||{}).sort(bedSort)}
+function rooms(u){return D.units[u].rooms}
+/* group A and B beds of one doubled room into one card, like the desktop map */
+function bedGroups(u,list){const g=[];list.forEach(b=>{const base=/^(\d{3})[AB]$/.exec(b);const last=g[g.length-1];
+  if(base&&last&&last.base===base[1])last.beds.push(b);else g.push({base:base?base[1]:b,beds:[b]})});return g}
+function shiftKey(){return V.date+'|'+V.shift}
+function getShift(create){const U=D.units[V.unit];U.shifts=U.shifts||{};let sh=U.shifts[shiftKey()];
+  if(!sh&&create){sh=defaultShift();U.shifts[shiftKey()]=sh}return sh||null}
+function asg(sh,b){return (sh&&sh.assign&&sh.assign[b])||{rn:0,tech:0}}
+function capFor(){try{return D.settings.caps[V.unit][V.shift]}catch(e){return V.unit==='icu'?2:5}}
+
+/* ── storage on this phone (a convenience; the backup file is the real copy) ── */
+function saveLocal(){try{localStorage.setItem(LS,JSON.stringify({D,META,CHG,V:{unit:V.unit,tab:V.tab}}));return true}catch(e){return false}}
+function loadLocal(){try{const r=localStorage.getItem(LS);if(!r)return false;const o=JSON.parse(r);if(!o||!o.D||!o.D.units)return false;
+  D=o.D;META=o.META||{};CHG=o.CHG||[];if(o.V){V.unit=o.V.unit||V.unit;V.tab=o.V.tab||V.tab}return true}catch(e){return false}}
+function clearLocal(){try{localStorage.removeItem(LS)}catch(e){}}
+
+/* ── change log: goes into the backup's History tab so the Mac shows what the phone did ── */
+function note(txt,mod){
+  D.hist=Array.isArray(D.hist)?D.hist:[];
+  D.hist.unshift({ts:Date.now(),mod:mod||'board',txt:txt+' (iPhone)',unit:V.unit});
+  if(D.hist.length>1200)D.hist.length=1200;
+  CHG.unshift({ts:Date.now(),txt:UNAME[V.unit]+' · '+txt});
+  saveLocal();
+}
+function unfinalize(sh,why){if(sh&&sh.finalized){sh.finalized=null;D.hist.unshift({ts:Date.now(),mod:'assign',txt:'Back to DRAFT: '+why+' (iPhone)',unit:V.unit})}}
+
+/* ── current shift by the unit's own shift times ── */
+function currentShift(){const t=(D&&D.settings&&D.settings.shiftTimes)||{dayStart:'0700',nightStart:'1900'};
+  const m=v=>{const x=String(v||'').padStart(4,'0');return +x.slice(0,2)*60+ +x.slice(2)};
+  const n=new Date(), hm=n.getHours()*60+n.getMinutes();let d=iso(n),s;
+  if(hm>=m(t.dayStart)&&hm<m(t.nightStart))s='day';else{s='night';if(hm<m(t.dayStart))d=addDays(d,-1)}
+  return {d,s}}
+
+/* ── toast ── */
+let toastT=null;
+function toast(msg,bad){const o=document.querySelector('.toast');if(o)o.remove();const t=document.createElement('div');t.className='toast'+(bad?' bad':'');
+  t.textContent=msg;t.setAttribute('role','status');t.onclick=()=>t.remove();document.body.appendChild(t);clearTimeout(toastT);toastT=setTimeout(()=>t.remove(),bad?7000:2600)}
+/* ══════════ header ══════════ */
+function renderHdr(){
+  document.querySelectorAll('#unitSeg button').forEach(b=>b.classList.toggle('on',b.dataset.u===V.unit));
+  document.querySelectorAll('#shSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===V.shift));
+  $('dLab').textContent=V.date?fmtD(V.date):'';$('dIn').value=V.date||'';
+  let s='';
+  if(D&&META){if(META.example)s='Example data';
+    else if(META.exported){const h=Math.round((Date.now()-Date.parse(META.exported))/3600000);
+      s='Backup from '+new Date(META.exported).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})+(h>=1?' ('+h+' h ago)':'')}
+    else s='Backup loaded'}
+  $('srcLine').textContent=s;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===V.tab));
+  const dot=$('chgDot');dot.hidden=!CHG.length||!!(META&&META.example);dot.textContent=CHG.length;
+  ['unitSeg','dPrev','dNext','shSeg'].forEach(id=>$(id).style.visibility=D?'':'hidden');$('dIn').parentElement.style.visibility=D?'':'hidden';
+}
+function render(){renderHdr();const m=$('main');
+  if(!D){m.innerHTML=startHTML();wireStart();return}
+  if(V.tab==='assign')renderAssign(m);else if(V.tab==='data')renderData(m);else if(V.tab==='set')renderSet(m);else renderBoard(m);
+}
+function startHTML(){return '<div class="stack" style="margin-top:16px">'
+  +'<div class="card"><div class="nm">Load your Unit Hub backup</div>'
+  +'<div class="hint" style="font-size:14px;line-height:1.5">On the Mac: Unit Hub, History tab, <b>Download backup</b>. Save it to iCloud Drive. Then tap below and pick that file from Files.</div>'
+  +'<button class="btn pri wide" id="stLoad">Load backup</button>'
+  +'<div class="hint">The file is read on this phone and never uploaded. It holds room numbers and initials only.</div></div>'
+  +'<button class="btn wide" id="stEx">Look around with example data</button></div>'}
+function wireStart(){$('stLoad').onclick=pickFile;$('stEx').onclick=loadExample}
+
+/* ══════════ bed board ══════════ */
+function topBanners(){
+  let h='';
+  if(META&&META.example)h+='<div class="banner ex">Example data. Fictional patients and staff. Load your backup on the Backup tab.</div>';
+  else if(META&&META.exported&&Date.now()-Date.parse(META.exported)>12*3600000)h+='<div class="banner ex">This backup is more than 12 hours old. Beds may have changed since.</div>';
+  return h;
+}
+function counts(u,sh){const R=rooms(u),L=beds(u);const c={beds:L.length,occ:0,open:0,pend:0,dc:0,evs:0};
+  L.forEach(b=>{const r=R[b];if(occ(r.st)){c.occ++;if(r.edc===V.date)c.dc++}if(r.st==='avail')c.open++;if(r.st==='pend')c.pend++;if(r.st==='evs')c.evs++});
+  c.rns=sh?(sh.onRns||[]).length:0;c.cap=capFor();c.ratio=c.rns?Math.ceil(c.occ/c.rns):0;return c}
+function bedMatch(b,sh){const r=rooms(V.unit)[b],a=asg(sh,b);
+  switch(V.filter){case 'occ':return occ(r.st);case 'open':return r.st==='avail';case 'pend':return r.st==='pend';case 'iso':return r.st==='iso';
+    case 'evs':return r.st==='evs';case 'dc':return occ(r.st)&&r.edc===V.date;case 'norn':return (occ(r.st)||r.st==='pend')&&!a.rn;default:return true}}
+function bedHTML(b,sh){const r=rooms(V.unit)[b],a=asg(sh,b),rn=staffById(a.rn),tc=staffById(a.tech);
+  const needs=occ(r.st)||r.st==='pend';
+  let h='<button class="bed s-'+r.st+'" data-bed="'+esc(b)+'" aria-label="Bed '+esc(b)+', '+esc(STL[r.st]||r.st)+'">'
+    +'<div class="top"><span class="no num">'+esc(b)+'</span><span class="stl">'+esc(r.st==='iso'&&r.iso?r.iso:STL[r.st]||r.st)+'</span>'
+    +(occ(r.st)&&r.ac?'<span class="tag">A'+r.ac+'</span>':'')+(occ(r.st)&&r.edc===V.date?'<span class="tag dc">DC TODAY</span>':'')+'</div>';
+  if(r.pt&&(needs))h+='<div class="pt">'+esc(r.pt)+'</div>';
+  if(needs)h+='<div class="who'+(a.rn?'':' none')+'">'+(a.rn?(rn&&rn.role==='LPN'?'LPN ':'RN ')+esc(rn?dispName(rn.name):'?'):'No nurse')+(tc?' · '+esc(dispName(tc.name)):'')+'</div>';
+  const fl=(r.flags||[]).map(f=>'<span class="tag">'+esc(ABBR[f]||f)+'</span>').join('');
+  if(needs&&fl)h+='<div class="tags">'+fl+'</div>';
+  if(r.st==='evs'&&r.evs){const mi=Math.floor((Date.now()-r.evs)/60000);h+='<div class="who">Waiting '+(mi>=60?Math.floor(mi/60)+'h '+(mi%60)+'m':mi+'m')+'</div>'}
+  if(r.nt)h+='<div class="who" style="font-weight:600;opacity:.8">'+esc(r.nt)+'</div>';
+  return h+'</button>'}
+function renderBoard(m){
+  const sh=getShift(false),c=counts(V.unit,sh);
+  const F=[['all','All',c.beds],['occ','Occupied',c.occ],['open','Open',c.open],['pend','Incoming',c.pend],['norn','No nurse',beds(V.unit).filter(b=>{const r=rooms(V.unit)[b];return (occ(r.st)||r.st==='pend')&&!asg(sh,b).rn}).length],
+    ['iso','Isolation',beds(V.unit).filter(b=>rooms(V.unit)[b].st==='iso').length],['dc','DC today',c.dc],['evs','Dirty',c.evs]];
+  const list=beds(V.unit).filter(b=>bedMatch(b,sh));
+  const groups=bedGroups(V.unit,list);
+  m.innerHTML=topBanners()
+    +(!sh?'<div class="banner info">No assignment saved for '+(V.shift==='day'?'Day':'Night')+' '+esc(fmtD(V.date))+'. Beds show as of the backup. Nurses can be added on Assignments.</div>':'')
+    +'<div class="sum">'
+      +'<div class="tile"><b class="num">'+c.occ+'/'+c.beds+'</b><span>Census, beds</span></div>'
+      +'<div class="tile"><b class="num">'+c.open+'</b><span>Open beds</span></div>'
+      +'<div class="tile'+(c.rns&&c.ratio>c.cap?' bad':'')+'"><b class="num">'+(c.rns?'1:'+c.ratio:'-')+'</b><span>RN ratio, cap 1:'+c.cap+'</span></div>'
+      +'<div class="tile"><b class="num">'+c.pend+'</b><span>Incoming</span></div>'
+      +'<div class="tile"><b class="num">'+c.dc+'</b><span>DC today</span></div>'
+      +'<div class="tile"><b class="num">'+c.rns+'</b><span>Nurses on</span></div>'
+    +'</div>'
+    +'<div class="chips" role="tablist">'+F.map(f=>'<button class="chip'+(V.filter===f[0]?' on':'')+'" data-f="'+f[0]+'">'+f[1]+'<span class="c num">'+f[2]+'</span></button>').join('')+'</div>'
+    +'<div class="beds">'+(groups.length?groups.map(g=>'<div class="room'+(g.beds.length>1?' pair':'')+'">'+g.beds.map(b=>bedHTML(b,sh)).join('')+'</div>').join('')
+      :'<div class="empty">No beds match this filter.</div>')+'</div>'
+    +'<p class="hint" style="margin-top:14px">Tap a bed to change its status, initials, acuity or nurse.</p>';
+  m.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{V.filter=b.dataset.f;render()});
+  m.querySelectorAll('[data-bed]').forEach(b=>b.onclick=()=>openBed(b.dataset.bed));
+}
+
+/* ══════════ sheets ══════════ */
+function openSheet(html,wire){const host=$('sheetHost');
+  host.innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>'+html+'</div></div>';
+  $('scrim').onclick=e=>{if(e.target.id==='scrim')closeSheet()};
+  wire&&wire(host.querySelector('.sheet'));const f=host.querySelector('.sheet button,.sheet input');if(f)f.focus({preventScroll:true})}
+function closeSheet(){$('sheetHost').innerHTML=''}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+
+function openBed(b){
+  const u=V.unit, r=rooms(u)[b], sh=getShift(false), a=asg(sh,b);
+  const W={st:r.st,pt:r.pt||'',ac:r.ac||0,iso:r.iso||'Contact',flags:(r.flags||[]).slice(),dc:r.edc===V.date,rn:a.rn||0,tech:a.tech||0,nt:r.nt||''};
+  const shc=sh||defaultShift();
+  const rnOpts=(shc.onRns||[]).map(id=>[id,who(id)]), tcOpts=(shc.onTechs||[]).map(id=>[id,who(id)]);
+  const flags=u==='icu'?FLAGS.concat(ICU_FLAGS):FLAGS;
+  const sel=(id,opts,v,none)=>'<select class="field" id="'+id+'"><option value="0">'+none+'</option>'+opts.map(o=>'<option value="'+o[0]+'"'+(o[0]===v?' selected':'')+'>'+esc(o[1])+'</option>').join('')+'</select>';
+  openSheet('<h2><span class="num">'+esc(b)+'</span><span class="stl" style="font-size:13px;color:var(--mut)">'+UNAME[u]+'</span></h2>'
+    +'<div><div class="lbl">Status</div><div class="opts" id="eSt">'+STATUSES.map(s=>'<button class="opt st s-'+s.k+(W.st===s.k?' on':'')+'" data-v="'+s.k+'">'+s.l+'</button>').join('')+'</div></div>'
+    +'<div id="ptBox" class="stack">'
+      +'<div><div class="lbl">Initials</div><input class="field" id="ePt" maxlength="3" autocomplete="off" autocapitalize="characters" placeholder="J.M" value="'+esc(W.pt)+'"></div>'
+      +'<div><div class="lbl">Acuity</div><div class="opts" id="eAc">'+[1,2,3,4].map(n=>'<button class="opt'+(W.ac===n?' on':'')+'" data-v="'+n+'">'+n+'</button>').join('')+'</div></div>'
+      +'<div id="isoBox"><div class="lbl">Isolation</div><select class="field" id="eIso">'+ISO.map(x=>'<option'+(x===W.iso?' selected':'')+'>'+x+'</option>').join('')+'</select></div>'
+      +'<div><div class="lbl">Flags</div><div class="opts" id="eFl">'+flags.map(f=>'<button class="opt'+(W.flags.includes(f)?' on':'')+'" data-v="'+esc(f)+'">'+esc(f)+'</button>').join('')+'</div></div>'
+      +'<div class="opts"><button class="opt'+(W.dc?' on':'')+'" id="eDc">Discharge today</button></div>'
+      +'<div><div class="lbl">Nurse</div>'+(rnOpts.length?sel('eRn',rnOpts,W.rn,'No nurse'):'<div class="hint">No nurses on this shift yet. Add them on Assignments.</div>')+'</div>'
+      +'<div><div class="lbl">CNA / Tech</div>'+(tcOpts.length?sel('eTc',tcOpts,W.tech,'No CNA / tech'):'<div class="hint">No CNA / techs on this shift yet.</div>')+'</div>'
+    +'</div>'
+    +'<div><div class="lbl">Note</div><input class="field" id="eNt" maxlength="80" placeholder="Care logistics only. No names or diagnoses." value="'+esc(W.nt)+'"></div>'
+    +'<div class="btns"><button class="btn" id="eCancel">Cancel</button><button class="btn pri" id="eSave">Save</button></div>',
+  s=>{
+    const sync=()=>{const cleared=['avail','evs','blk'].includes(W.st);$('ptBox').hidden=cleared;$('isoBox').hidden=W.st!=='iso'};
+    sync();
+    s.querySelectorAll('#eSt [data-v]').forEach(x=>x.onclick=()=>{W.st=x.dataset.v;s.querySelectorAll('#eSt .opt').forEach(o=>o.classList.toggle('on',o===x));sync()});
+    s.querySelectorAll('#eAc [data-v]').forEach(x=>x.onclick=()=>{const n=+x.dataset.v;W.ac=W.ac===n?0:n;s.querySelectorAll('#eAc .opt').forEach(o=>o.classList.toggle('on',+o.dataset.v===W.ac))});
+    s.querySelectorAll('#eFl [data-v]').forEach(x=>x.onclick=()=>{const f=x.dataset.v;W.flags=W.flags.includes(f)?W.flags.filter(y=>y!==f):W.flags.concat(f);x.classList.toggle('on')});
+    $('eDc').onclick=()=>{W.dc=!W.dc;$('eDc').classList.toggle('on',W.dc)};
+    $('eCancel').onclick=closeSheet;
+    $('eSave').onclick=()=>{
+      W.pt=$('ePt').value.trim().toUpperCase().replace(/[^A-Z.]/g,'').slice(0,3);W.iso=$('eIso').value;W.nt=$('eNt').value.trim();
+      if($('eRn'))W.rn=+$('eRn').value;if($('eTc'))W.tech=+$('eTc').value;
+      saveBed(b,W);closeSheet();render()};
+  });
+}
+/* Same rules as the Mac's room editor: Available, Dirty and Blocked clear the patient
+   and the assignment. Fields the phone does not edit (admit date, attending, care board)
+   are kept as they were. */
+function saveBed(b,W){
+  const u=V.unit, R=rooms(u), prev=R[b]||blankRoom(), cleared=['avail','evs','blk'].includes(W.st);
+  const r=Object.assign({},prev);
+  r.st=W.st;r.nt=W.nt;
+  if(cleared){Object.assign(r,{pt:'',ac:0,adm:'',lpn:false,iso:'',ad:'',edc:'',md:'',flags:[],dcp:'',act:'',diet:'',bgl:'',alg:'',dc:null})}
+  else{r.pt=W.pt;r.ac=W.ac;r.iso=W.st==='iso'?W.iso:'';r.flags=W.flags;
+    if(W.dc)r.edc=V.date;else if(prev.edc===V.date)r.edc=''}
+  r.evs=W.st==='evs'?(prev.st==='evs'&&prev.evs?prev.evs:Date.now()):null;
+  R[b]=r;
+  const sh=getShift(!cleared||!!getShift(false));
+  const bits=[];
+  if(prev.st!==W.st)bits.push((STL[prev.st]||prev.st)+' to '+(STL[W.st]||W.st));
+  if(!cleared&&r.pt!==prev.pt)bits.push('pt '+(r.pt||'cleared'));
+  if(sh){if(!sh.firstEdit)sh.firstEdit=Date.now();
+    const old=asg(sh,b);
+    if(cleared){if(sh.assign&&sh.assign[b]){unfinalize(sh,'room '+b+' assignment changed');delete sh.assign[b]}}
+    else{sh.assign=sh.assign||{};const nw={rn:W.rn||0,tech:W.tech||0,src:(W.rn||0)===(old.rn||0)?(old.src||'manual'):'manual'};
+      if(nw.rn!==(old.rn||0)||nw.tech!==(old.tech||0)){unfinalize(sh,'room '+b+' assignment changed');if(nw.rn!==(old.rn||0))bits.push('nurse '+(who(nw.rn)||'cleared'))}
+      sh.assign[b]=nw}
+    if(occ(W.st)&&sh.deck){const i=sh.deck.findIndex(d=>d&&d.r===b);if(i>-1)sh.deck.splice(i,1)}}
+  note('Room '+b+': '+(bits.length?bits.join(', '):'updated'));
+  toast('Bed '+b+' saved');
+}
+
+/* ══════════ assignments ══════════ */
+function renderAssign(m){
+  const sh=getShift(false), R=rooms(V.unit), cap=capFor(), L=beds(V.unit);
+  const needRn=L.filter(b=>(occ(R[b].st)||R[b].st==='pend')&&!asg(sh,b).rn);
+  const needTc=L.filter(b=>(occ(R[b].st)||R[b].st==='pend')&&!asg(sh,b).tech);
+  const mine=(id,k)=>L.filter(b=>asg(sh,b)[k]===id);
+  const chip=b=>{const r=R[b];return '<button class="bchip s-'+r.st+'" data-bed="'+esc(b)+'">'+esc(b)+(occ(r.st)&&r.ac?'<small>A'+r.ac+'</small>':'')+(r.st==='pend'?'<small>INC</small>':'')+'</button>'};
+  const badges=(s,id)=>(sh&&sh.charge===id?'<span class="badge c">Charge</span>':'')+(s&&s.role==='LPN'?'<span class="badge">LPN</span>':'')+(s&&s.guest?'<span class="badge fl">Float'+(s.from?' · '+esc(s.from):'')+'</span>':'')+(sh&&(sh.calledIn||[]).includes(id)?'<span class="badge">Called in</span>':'');
+  const rnCards=(sh?sh.onRns||[]:[]).map(id=>{const s=staffById(id),bs=mine(id,'rn'),pts=bs.filter(b=>occ(R[b].st)).length,acu=bs.filter(b=>occ(R[b].st)).reduce((t,b)=>t+(R[b].ac||2),0);
+    return '<div class="card"><div class="h"><span class="nm">'+esc(s?dispName(s.name):'Unknown')+'</span>'+badges(s,id)+'<span class="ld num'+(pts>cap?' over':'')+'">'+pts+'/'+cap+' · A'+acu+'</span></div>'
+      +'<div class="bchips">'+(bs.length?bs.map(chip).join(''):'<span class="hint">No beds yet</span>')+'</div></div>'}).join('');
+  const tcCards=(sh?sh.onTechs||[]:[]).map(id=>{const s=staffById(id),bs=mine(id,'tech');
+    return '<div class="card"><div class="h"><span class="nm">'+esc(s?dispName(s.name):'Unknown')+'</span>'+badges(s,id)+'<span class="ld num">'+bs.length+' beds</span></div>'
+      +'<div class="bchips">'+(bs.length?bs.map(chip).join(''):'<span class="hint">No beds yet</span>')+'</div></div>'}).join('');
+  m.innerHTML=topBanners()
+    +'<div class="row" style="margin-top:12px;justify-content:space-between"><div><div style="font-weight:800;font-size:17px">'+UNAME[V.unit]+' · '+(V.shift==='day'?'Day':'Night')+'</div>'
+      +'<div class="hint">'+(sh?(sh.finalized?'Finalized':'Draft')+' · charge '+esc(who(sh.charge)||'not set'):'Nothing saved for this shift yet')+'</div></div></div>'
+    +'<div class="sec">Needs a nurse <span class="num">('+needRn.length+')</span></div>'
+    +(needRn.length?'<div class="bchips" id="poolRn">'+needRn.map(b=>chip(b).replace('data-bed=','data-pr=')).join('')+'</div>':'<div class="hint">Every occupied and incoming bed has a nurse.</div>')
+    +'<div class="sec">Nurses <span class="num">('+(sh?(sh.onRns||[]).length:0)+')</span></div>'
+    +'<div class="stack">'+(rnCards||'<div class="empty">No nurses on this shift.</div>')+'<button class="btn wide" id="addRn">+ Add a nurse to this shift</button></div>'
+    +'<div class="sec">Needs a CNA <span class="num">('+needTc.length+')</span></div>'
+    +(needTc.length?'<div class="bchips" id="poolTc">'+needTc.map(b=>chip(b).replace('data-bed=','data-pt=')).join('')+'</div>':'<div class="hint">Every occupied and incoming bed has a CNA / tech.</div>')
+    +'<div class="sec">CNA / Techs <span class="num">('+(sh?(sh.onTechs||[]).length:0)+')</span></div>'
+    +'<div class="stack">'+(tcCards||'<div class="empty">No CNA / techs on this shift.</div>')+'<button class="btn wide" id="addTc">+ Add a CNA / tech to this shift</button></div>'
+    +'<p class="hint" style="margin-top:14px">Tap a bed in a "Needs" list to assign it. Tap a bed on a card to open it.</p>';
+  m.querySelectorAll('[data-bed]').forEach(b=>b.onclick=()=>openBed(b.dataset.bed));
+  m.querySelectorAll('[data-pr]').forEach(b=>b.onclick=()=>pickStaff(b.dataset.pr,'rn'));
+  m.querySelectorAll('[data-pt]').forEach(b=>b.onclick=()=>pickStaff(b.dataset.pt,'tech'));
+  $('addRn').onclick=()=>addToShift('rn');$('addTc').onclick=()=>addToShift('tech');
+}
+function pickStaff(b,k){
+  const sh=getShift(false), R=rooms(V.unit), cap=capFor(), L=beds(V.unit);
+  const ids=sh?(k==='rn'?sh.onRns:sh.onTechs)||[]:[];
+  if(!ids.length){toast('Add '+(k==='rn'?'a nurse':'a CNA / tech')+' to this shift first',true);return}
+  const load=id=>{const bs=L.filter(x=>asg(sh,x)[k]===id);return k==='rn'?bs.filter(x=>occ(R[x].st)).length:bs.length};
+  openSheet('<h2>Bed <span class="num">'+esc(b)+'</span> to which '+(k==='rn'?'nurse':'CNA / tech')+'?</h2>'
+    +'<div class="pick">'+ids.map(id=>{const n=load(id),over=k==='rn'&&n>=cap;
+      return '<button data-id="'+id+'">'+esc(who(id)||'Unknown')+'<span class="r num'+(over?' over':'')+'">'+(k==='rn'?n+'/'+cap+' pts':n+' beds')+'</span></button>'}).join('')+'</div>'
+    +'<button class="btn" id="pkCancel">Cancel</button>',
+  s=>{s.querySelectorAll('[data-id]').forEach(x=>x.onclick=()=>{
+      const id=+x.dataset.id, sh2=getShift(true);sh2.assign=sh2.assign||{};const a=sh2.assign[b]||{rn:0,tech:0};
+      a[k]=id;if(k==='rn')a.src='manual';sh2.assign[b]=a;unfinalize(sh2,'room assigned');if(!sh2.firstEdit)sh2.firstEdit=Date.now();
+      note('Room '+b+(k==='rn'?' to ':' tech to ')+who(id),'assign');
+      if(k==='rn'&&load(id)>cap)toast(who(id)+' is now over cap ('+load(id)+' of '+cap+')',true);else toast('Bed '+b+' to '+who(id));
+      closeSheet();render()});
+    $('pkCancel').onclick=closeSheet});
+}
+function addToShift(k){
+  const sh=getShift(false), on=new Set(sh?(k==='rn'?sh.onRns:sh.onTechs)||[]:[]);
+  const people=(D.staff||[]).filter(s=>(k==='rn'?isNurse(s):s.role==='CNA/Tech')&&(s.unit===V.unit||s.unit==='float'||(s.xt||[]).some(x=>x.u===V.unit))&&!on.has(s.id))
+    .sort((a,b)=>dispName(a.name).localeCompare(dispName(b.name)));
+  const guests=(D.guests||[]).filter(s=>(k==='rn'?isNurse(s):s.role==='CNA/Tech')&&!on.has(s.id));
+  const all=people.concat(guests);
+  openSheet('<h2>Add '+(k==='rn'?'a nurse':'a CNA / tech')+'</h2>'
+    +(all.length?'<input class="field" id="pkQ" placeholder="Search names" autocomplete="off"><div class="pick" id="pkL">'+all.map(s=>'<button data-id="'+s.id+'" data-n="'+esc(dispName(s.name).toLowerCase())+'">'+esc(dispName(s.name))+'<span class="r">'+esc(s.guest?'float'+(s.from?' · '+s.from:''):s.role+(s.shift?' · '+s.shift:''))+'</span></button>').join('')+'</div>'
+      :'<div class="empty">Nobody left to add from this backup\'s roster. Floats are added on the Mac.</div>')
+    +'<button class="btn" id="pkCancel">Cancel</button>',
+  s=>{const q=$('pkQ');if(q)q.oninput=()=>{const v=q.value.trim().toLowerCase();s.querySelectorAll('#pkL [data-id]').forEach(x=>x.hidden=v&&!x.dataset.n.includes(v))};
+    s.querySelectorAll('[data-id]').forEach(x=>x.onclick=()=>{const id=+x.dataset.id, sh2=getShift(true);
+      (k==='rn'?sh2.onRns:sh2.onTechs).push(id);unfinalize(sh2,'staff added');
+      note(who(id)+' added to shift','assign');toast(who(id)+' added');closeSheet();render()});
+    $('pkCancel').onclick=closeSheet});
+}
+/* ══════════ settings: doubled rooms ══════════
+   Same rules as the Mac (v33+): doubling moves a patient in the room to bed A with
+   their nurse, tech, deck entry and surgery; making it single keeps whichever bed
+   has the patient and is refused while both beds hold one. The room list in the
+   backup is the truth; settings.splitRooms is written to match it, so the Mac
+   loads the backup without changing anything. */
+const MS_BASE=(()=>{const a=[];for(let r=251;r<=264;r++)a.push(String(r));for(let r=267;r<=277;r++)a.push(String(r));return a})();
+const AB_ROOMS=['256','258','261','262','267','268','269','270'];   // rooms built for two patients
+const hasPt=r=>!!r&&(occ(r.st)||r.st==='pend'||!!(r.pt&&!['avail','evs','blk'].includes(r.st)));
+function isDoubled(b){const R=rooms('medsurg');return !!(R[b+'A']||R[b+'B'])}
+function abCapable(){return MS_BASE.filter(b=>AB_ROOMS.includes(b)||isDoubled(b))}
+function remapShifts(map,drop){
+  Object.values(D.units.medsurg.shifts||{}).forEach(sh=>{if(!sh)return;
+    if(sh.assign){const n={};const ks=Object.keys(sh.assign).sort((x,y)=>(map[y]!==undefined)-(map[x]!==undefined));
+      ks.forEach(k=>{if(drop.includes(k))return;const nk=map[k]!==undefined?map[k]:k;if(!n[nk])n[nk]=sh.assign[k]});sh.assign=n}
+    const mv=k=>map[k]!==undefined?map[k]:(drop.includes(k)?(map[Object.keys(map)[0]]||k):k);
+    (sh.deck||[]).forEach(d=>{if(d&&d.r)d.r=mv(d.r)});
+    (sh.surg||[]).forEach(x=>{if(x&&x.room)x.room=mv(x.room)});
+    (sh.admits||[]).forEach(x=>{if(x&&x.r)x.r=mv(x.r)});
+    (sh.dcs||[]).forEach(x=>{if(x&&x.r)x.r=mv(x.r)});
+  });
+}
+function writeSplitSetting(){D.settings=D.settings||{};D.settings.splitRooms=MS_BASE.filter(isDoubled)}
+function toggleDoubled(b){
+  const R=rooms('medsurg'), A=b+'A', B=b+'B';
+  if(isDoubled(b)){
+    if(hasPt(R[A])&&hasPt(R[B])){toast('Room '+b+' has a patient in both beds. Move or discharge one before making it single.',true);return}
+    const keep=(hasPt(R[B])&&!hasPt(R[A]))?B:A, other=keep===A?B:A;
+    R[b]=R[keep]||{...blankRoom()};delete R[A];delete R[B];
+    const map={};map[keep]=b;remapShifts(map,[other]);
+    writeSplitSetting();V.view=null;
+    D.hist.unshift({ts:Date.now(),mod:'sys',txt:'Room '+b+' made single again (iPhone)',unit:'medsurg'});
+    CHG.unshift({ts:Date.now(),txt:'Room '+b+' made single again'});saveLocal();toast('Room '+b+' is single');
+  }else{
+    R[A]=R[b]||blankRoom();R[B]=blankRoom();delete R[b];
+    const map={};map[b]=A;remapShifts(map,[]);
+    writeSplitSetting();
+    D.hist.unshift({ts:Date.now(),mod:'sys',txt:'Room '+b+' doubled: beds '+A+' and '+B+' (iPhone)',unit:'medsurg'});
+    CHG.unshift({ts:Date.now(),txt:'Room '+b+' doubled: beds '+A+' and '+B});saveLocal();toast('Room '+b+' doubled');
+  }
+  render();
+}
+function renderSet(m){
+  const R=rooms('medsurg'), list=abCapable(), nDbl=MS_BASE.filter(isDoubled).length;
+  m.innerHTML=topBanners()
+    +'<div class="sec">Med-Surg doubled rooms</div>'
+    +'<div class="hint" style="font-size:14px;line-height:1.5;margin-bottom:10px">Turn on to split a room into beds A and B. Only rooms built for two patients are listed. <b class="num">'+beds('medsurg').length+'</b> Med-Surg beds now, <b class="num">'+nDbl+'</b> rooms doubled.</div>'
+    +'<div class="stack">'+list.map(b=>{const on=isDoubled(b), both=on&&hasPt(R[b+'A'])&&hasPt(R[b+'B']);
+      const tx=on?(both?'Both beds hold a patient. Move one before making it single.':'Beds '+b+'A and '+b+'B'+((hasPt(R[b+'A'])||hasPt(R[b+'B']))?' · '+[b+'A',b+'B'].filter(x=>hasPt(R[x])).join(', ')+' occupied':''))
+        :(hasPt(R[b])?'Single · patient '+esc(R[b].pt||'')+' moves to bed A':'Single');
+      return '<button class="tog'+(both?' lock':'')+'" role="switch" aria-checked="'+on+'" data-sp="'+b+'"><span class="rm num">'+b+'</span><span class="tx">'+tx+'</span><span class="sw" aria-hidden="true"></span></button>'}).join('')+'</div>'
+    +'<div class="sec">Working with the Mac</div>'
+    +'<div class="card"><div class="hint" style="font-size:14px;line-height:1.5">Every change here, beds, assignments and doubled rooms, goes into the backup you save on the Backup tab. Load it on the Mac with Unit Hub v36 or later, History tab, Load backup. Older Unit Hub versions do not know about A and B beds.</div>'
+      +'<dl class="kv" style="margin-top:8px"><dt>Data version</dt><dd class="num">'+esc(D.v)+'</dd><dt>Roster</dt><dd class="num">'+(D.staff||[]).length+' people</dd></dl></div>';
+  m.querySelectorAll('[data-sp]').forEach(x=>x.onclick=()=>toggleDoubled(x.dataset.sp));
+}
+/* ══════════ backup tab ══════════ */
+let DL=null;   // downloads capability, null when this view cannot save files
+function renderData(m){
+  const ex=META&&META.example;
+  const stc=D?beds('medsurg').length+beds('icu').length:0;
+  m.innerHTML=topBanners()
+    +'<div class="sec">Loaded</div><div class="card"><dl class="kv">'
+      +'<dt>File</dt><dd>'+esc(ex?'Example data':(META.fileName||'Backup'))+'</dd>'
+      +(META.exported?'<dt>Saved on Mac</dt><dd>'+esc(new Date(META.exported).toLocaleString([],{hour12:false}))+'</dd>':'')
+      +'<dt>Beds</dt><dd class="num">'+stc+' ('+beds('medsurg').length+' Med-Surg, '+beds('icu').length+' ICU)</dd>'
+      +'<dt>Roster</dt><dd class="num">'+(D.staff||[]).length+' people</dd></dl>'
+      +'<button class="btn wide" id="bkLoad">Load a different backup</button></div>'
+    +'<div class="sec">Changes on this phone <span class="num">('+CHG.length+')</span></div>'
+    +(CHG.length?'<div class="card"><div class="log">'+CHG.slice(0,40).map(c=>'<div><b class="num">'+new Date(c.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false})+'</b> '+esc(c.txt)+'</div>').join('')+'</div></div>'
+      :'<div class="hint">None yet.</div>')
+    +'<div class="sec">Send changes back to the Mac</div>'
+    +'<div class="card">'
+      +(ex?'<div class="hint">Example data cannot be saved as a backup. Load your own backup first.</div>'
+        :'<div class="hint" style="font-size:14px;line-height:1.5">1. Tap <b>Save backup for the Mac</b> and save it to iCloud Drive.<br>2. On the Mac: Unit Hub, History tab, <b>Load backup</b>, pick that file.<br>Loading it replaces what is on the Mac, so do not make changes on the Mac in between.</div>'
+         +'<button class="btn pri wide" id="bkSave">Save backup for the Mac</button>')
+    +'</div>'
+    +'<div class="sec">This phone</div><div class="card"><div class="hint">The loaded backup stays on this phone, in this page only, until you clear it.</div>'
+      +'<button class="btn danger wide" id="bkClear">Clear from this phone</button></div>';
+  $('bkLoad').onclick=pickFile;
+  const s=$('bkSave');if(s)s.onclick=saveBackup;
+  $('bkClear').onclick=()=>openSheet('<h2>Clear from this phone?</h2><div class="hint" style="font-size:14px">This removes the loaded backup'+(CHG.length&&!ex?' and the '+CHG.length+' change'+(CHG.length>1?'s':'')+' made here that are not saved back to the Mac yet':'')+'. The Mac copy is not touched.</div>'
+    +'<div class="btns"><button class="btn" id="cxNo">Keep it</button><button class="btn danger" id="cxYes">Clear</button></div>',
+    ()=>{$('cxNo').onclick=closeSheet;$('cxYes').onclick=()=>{clearLocal();D=null;META=null;CHG=[];V.tab='board';closeSheet();render();toast('Cleared from this phone')}});
+}
+/* Without the Claude viewer (a home-screen copy, plain Safari) fall back to the
+   iPhone share sheet (Save to Files), then to a normal browser download. */
+async function saveFallback(name,text){
+  try{const f=new File([text],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return 'saved'}}
+  catch(e){if(e&&e.name==='AbortError')return 'declined'}
+  try{const u=URL.createObjectURL(new Blob([text],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return 'saved'}
+  catch(e){return 'failed'}
+}
+async function saveBackup(){
+  const env={__delta:'DeltaUnitHub',schema:D.v,appSchemaAtExport:D.v,exported:new Date().toISOString(),
+    exportedBy:'iPhone (Unit Hub Mobile)',
+    contains:'Full application state: both units, rooms, assignments, schedule, requests, approved schedules, call logs, productivity records, history and snapshots.',
+    note:'Saved from Unit Hub Mobile on an iPhone. Open with Delta Unit Hub (History tab, Load backup). Contains room numbers and patient initials only - store it on hospital-managed storage.',
+    data:D};
+  const d=new Date(), name=iso(d)+'_'+pad(d.getHours())+pad(d.getMinutes())+'_DeltaUnitHub_backup_iPhone.json';
+  const text=JSON.stringify(env,null,1);
+  if(!DL){const s=await saveFallback(name,text);
+    if(s==='saved'){D.hist.unshift({ts:Date.now(),mod:'sys',txt:'Backup saved from iPhone as '+name,unit:V.unit});CHG=[];saveLocal();render();toast('Backup ready. Save it to iCloud Drive, then Load backup on the Mac.')}
+    else if(s==='declined')toast('Not saved.');else toast('This view cannot save files. Open the link in the Claude app or Safari.',true);
+    return}
+  try{const r=await DL.save({filename:name,data:text});
+    if(r&&r.status==='saved'){META.savedBack=Date.now();toast('Backup saved. Load it on the Mac from the History tab.');
+      D.hist.unshift({ts:Date.now(),mod:'sys',txt:'Backup saved from iPhone as '+name,unit:V.unit});CHG=[];saveLocal();render()}}
+  catch(e){const c=e&&e.code;
+    if(c==='declined')toast('Not saved.');else if(c==='rate_limited')toast('A save is already waiting for an answer. Try again in a moment.',true);
+    else toast('Could not save the file here ('+(c||'unavailable')+'). Your changes are still on this phone.',true)}
+}
+function pickFile(){$('fileIn').value='';$('fileIn').click()}
+function readFile(f){
+  const rd=new FileReader();
+  rd.onload=e=>{
+    let raw;try{raw=JSON.parse(e.target.result)}catch(x){toast('That file is not a Unit Hub backup. Pick the .json from Download backup.',true);return}
+    const env=(raw&&raw.__delta==='DeltaUnitHub'&&raw.data)?raw:null, data=env?env.data:raw;
+    if(!data||!data.v||!data.units||!data.units.medsurg){toast('That file is not a Unit Hub backup. Pick the .json from Download backup.',true);return}
+    if(data.v>17){toast('That backup is from a newer Unit Hub (data version '+data.v+'). This page reads up to 17.',true);return}
+    const go=()=>{D=data;D.guests=Array.isArray(D.guests)?D.guests:[];D.hist=Array.isArray(D.hist)?D.hist:[];
+      META={fileName:f.name,exported:env&&env.exported||null,example:false};CHG=[];
+      const c=currentShift();V.date=c.d;V.shift=c.s;V.filter='all';V.tab='board';
+      if(!saveLocal())toast('Loaded. This phone could not keep a copy, so it is gone when you close the page.',true);else toast('Backup loaded');
+      closeSheet();render()};
+    if(D&&CHG.length&&!(META&&META.example)){openSheet('<h2>Replace what is loaded?</h2><div class="hint" style="font-size:14px">'+CHG.length+' change'+(CHG.length>1?'s':'')+' made on this phone are not saved back to the Mac yet. Loading a new backup drops them.</div>'
+      +'<div class="btns"><button class="btn" id="rpNo">Keep current</button><button class="btn danger" id="rpYes">Replace</button></div>',()=>{$('rpNo').onclick=closeSheet;$('rpYes').onclick=go});return}
+    go();
+  };
+  rd.onerror=()=>toast('Could not read that file.',true);
+  rd.readAsText(f);
+}
+function loadExample(){D=JSON.parse(EXAMPLE);META={example:true,fileName:'Example data'};CHG=[];V.date=D.date;V.shift=D.shift||'day';V.unit='medsurg';V.tab='board';V.filter='all';render()}
+
+/* ══════════ wiring ══════════ */
+function shiftStep(n){if(!V.date)return;if(n>0){if(V.shift==='day')V.shift='night';else{V.shift='day';V.date=addDays(V.date,1)}}
+  else{if(V.shift==='night')V.shift='day';else{V.shift='night';V.date=addDays(V.date,-1)}}render()}
+document.querySelectorAll('#unitSeg button').forEach(b=>b.onclick=()=>{V.unit=b.dataset.u;V.filter='all';saveLocal();render()});
+document.querySelectorAll('#shSeg button').forEach(b=>b.onclick=()=>{V.shift=b.dataset.s;render()});
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{if(!D&&b.dataset.t!=='board'){toast('Load a backup first');return}V.tab=b.dataset.t;saveLocal();render();window.scrollTo(0,0)});
+$('dPrev').onclick=()=>shiftStep(-1);$('dNext').onclick=()=>shiftStep(1);
+$('dIn').onchange=()=>{if($('dIn').value){V.date=$('dIn').value;render()}};
+$('fileIn').onchange=e=>{if(e.target.files.length)readFile(e.target.files[0])};
+/* home-screen name and icon for Share > Add to Home Screen */
+(function(){try{const h=document.head||document.getElementsByTagName('head')[0];if(!h)return;
+  const c=document.createElement('canvas');c.width=c.height=180;const g=c.getContext('2d');
+  g.fillStyle='#14424B';g.fillRect(0,0,180,180);g.fillStyle='#FFFFFF';
+  [[38,46],[96,46],[38,100],[96,100]].forEach(([x,y],i)=>{g.globalAlpha=i===1?1:.92;g.fillStyle=['#EAF1DC','#E3F0F3','#FBEED3','#FAE3E6'][i];g.beginPath();g.roundRect?g.roundRect(x,y,46,38,7):g.rect(x,y,46,38);g.fill()});
+  const add=(tag,attrs)=>{const e=document.createElement(tag);Object.keys(attrs).forEach(k=>e.setAttribute(k,attrs[k]));h.appendChild(e)};
+  add('link',{rel:'apple-touch-icon',href:c.toDataURL('image/png')});
+  add('meta',{name:'apple-mobile-web-app-title',content:'Unit Hub'});
+  add('meta',{name:'apple-mobile-web-app-capable',content:'yes'});
+  add('meta',{name:'theme-color',content:'#14424B'});
+}catch(e){}})();
+/* boot */
+(function(){
+  if(loadLocal()){const c=currentShift();V.date=c.d;V.shift=c.s}
+  render();
+  try{if(window.claude&&window.claude.use)window.claude.use('downloads').then(ns=>{DL=ns||null;if(V.tab==='data'&&D)render()}).catch(()=>{DL=null})}catch(e){DL=null}
+})();
+
+</script>
